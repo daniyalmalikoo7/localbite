@@ -33,6 +33,7 @@ and detail side by side:
 | Write a review | Done | `screens/vendor_detail/write_review_sheet.dart` |
 | Live queue estimate | Done | `domain/queue_estimate.dart` |
 | Responsive phone / tablet / landscape layouts | Done | `theme/breakpoints.dart`, `widgets/adaptive_nav.dart` |
+| Loading, error and retry states | Done | `widgets/skeleton.dart`, `widgets/error_retry.dart`, `state/load_state.dart` |
 | Map tab | Not built | placeholder screen |
 | Profile and accounts | Not built | placeholder screen |
 | Saving across app restarts | Not built | in-memory only |
@@ -49,9 +50,12 @@ flutter run -d <device-id>
 
 ```bash
 flutter analyze && flutter test
+flutter test integration_test/app_test.dart -d <device-id>
 ```
 
-70 tests pass and the analyzer reports no issues.
+76 unit and widget tests pass, plus 5 end-to-end tests that drive the real app
+on a simulator through the four required user flows. The analyzer reports no
+issues.
 
 ## How it is put together
 
