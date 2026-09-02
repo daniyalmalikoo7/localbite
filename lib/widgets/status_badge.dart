@@ -78,7 +78,9 @@ class StatusBadge extends StatelessWidget {
                       child: Text(
                         '· $changeLabel',
                         style: AppTextStyles.secondary,
-                        maxLines: 1,
+                        // Two lines: "Opens tomorrow 6:30 AM" does not fit on
+                        // one at narrow card widths.
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
