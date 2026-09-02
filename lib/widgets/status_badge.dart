@@ -4,6 +4,7 @@ import '../app/app_scope.dart';
 import '../domain/opening_hours.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_theme.dart';
+import '../theme/motion.dart';
 
 enum StatusBadgeSize { small, large }
 
@@ -43,6 +44,7 @@ class StatusBadge extends StatelessWidget {
         final changeLabel = status.label(now: now);
 
         final pill = Container(
+          key: ValueKey(isOpen),
           padding: EdgeInsets.symmetric(
             horizontal: size == StatusBadgeSize.large
                 ? AppSpacing.sm
@@ -64,6 +66,23 @@ class StatusBadge extends StatelessWidget {
           ),
         );
 
+        // The whole point of the feature is that this changes on its own.
+        // Without a transition the flip is invisible unless you happen to be
+        // looking straight at it.
+        final animatedPill = AnimatedSwitcher(
+          duration: context.motion(const Duration(milliseconds: 200)),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.92, end: 1).animate(animation),
+              child: child,
+            ),
+          ),
+          child: pill,
+        );
+
         return Semantics(
           // The word is always present, so status is never colour-only.
           label: '$word. $changeLabel',
@@ -72,7 +91,7 @@ class StatusBadge extends StatelessWidget {
               ? Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    pill,
+                    animatedPill,
                     const SizedBox(width: AppSpacing.sm),
                     Flexible(
                       child: Text(
@@ -86,7 +105,7 @@ class StatusBadge extends StatelessWidget {
                     ),
                   ],
                 )
-              : pill,
+              : animatedPill,
         );
       },
     );

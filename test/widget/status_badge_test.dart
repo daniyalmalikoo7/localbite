@@ -27,7 +27,7 @@ void main() {
 
         // Advance past closing. Nothing else is touched.
         clock.setNow(DateTime(2026, 9, 2, 21, 30));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         expect(find.text('CLOSED'), findsOneWidget);
         expect(find.text('OPEN'), findsNothing);
@@ -47,7 +47,7 @@ void main() {
       expect(find.text('CLOSED'), findsOneWidget);
 
       clock.setNow(DateTime(2026, 9, 2, 11));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('OPEN'), findsOneWidget);
     });

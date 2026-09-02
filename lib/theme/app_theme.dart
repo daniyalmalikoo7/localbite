@@ -99,6 +99,15 @@ abstract final class AppSizes {
   static const minTapTarget = 48.0;
 }
 
+/// Icon sizes as tokens rather than arbitrary per-call values, so the set
+/// keeps a consistent rhythm across the interface.
+abstract final class AppIconSize {
+  static const xs = 14.0;
+  static const sm = 16.0;
+  static const md = 20.0;
+  static const lg = 24.0;
+}
+
 abstract final class AppTheme {
   static ThemeData light() {
     final scheme =
@@ -135,6 +144,10 @@ abstract final class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primaryStrong,
           foregroundColor: Colors.white,
+          // An explicit disabled pair: the default dims the fill and the label
+          // together until the button is barely perceptible.
+          disabledBackgroundColor: AppColors.surfaceSunken,
+          disabledForegroundColor: AppColors.inkSecondary,
           minimumSize: const Size.fromHeight(AppSizes.ctaMinHeight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.button),

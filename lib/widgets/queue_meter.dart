@@ -5,6 +5,7 @@ import '../domain/queue_estimate.dart';
 import '../domain/vendor.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_theme.dart';
+import '../theme/motion.dart';
 
 /// Live queue estimate. Shares the clock with [StatusBadge], so it moves on
 /// the same tick without any extra plumbing.
@@ -45,7 +46,7 @@ class QueueMeter extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.tag),
                 child: TweenAnimationBuilder<double>(
-                  duration: AppDuration.normal,
+                  duration: context.motionNormal,
                   curve: Curves.easeOut,
                   tween: Tween(end: isOpen ? queueFraction(wait) : 0.0),
                   builder: (context, value, _) => LinearProgressIndicator(

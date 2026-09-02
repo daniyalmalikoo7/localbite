@@ -4,6 +4,7 @@ import '../app/app_tab.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_theme.dart';
 import '../theme/breakpoints.dart';
+import '../theme/motion.dart';
 
 /// Bottom bar on phones, side rail on tablets.
 ///
@@ -160,7 +161,7 @@ class _NavItem extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xs + 2),
               AnimatedContainer(
-                duration: AppDuration.fast,
+                duration: context.motionFast,
                 height: 2,
                 width: selected ? 32 : 0,
                 decoration: BoxDecoration(

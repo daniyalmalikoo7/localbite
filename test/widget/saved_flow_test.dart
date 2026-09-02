@@ -58,7 +58,7 @@ void main() {
 
       // 3 AM: both saved stalls are shut.
       clock.setNow(DateTime(2026, 9, 3, 3));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('OPEN'), findsNothing);
       expect(find.text('CLOSED'), findsNWidgets(2));

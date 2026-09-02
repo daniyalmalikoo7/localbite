@@ -5,6 +5,7 @@ import '../../app/app_scope.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/breakpoints.dart';
+import '../../theme/motion.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/vendor_card.dart';
 import '../../widgets/wordmark.dart';
@@ -46,19 +47,26 @@ class _SavedScreenState extends State<SavedScreen> {
           ),
           const VerticalDivider(width: 1),
           Expanded(
-            child: selectedId == null
-                ? const EmptyState(
-                    emoji: '👈',
-                    title: 'Pick a saved stall',
-                    message: 'Choose one from the list to see its details.',
-                  )
-                : Container(
-                    color: AppColors.background,
-                    child: VendorDetailView(
-                      vendorId: selectedId,
-                      showBackButton: false,
+            child: AnimatedSwitcher(
+              duration: context.motion(const Duration(milliseconds: 200)),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: selectedId == null
+                  ? const EmptyState(
+                      key: ValueKey('empty'),
+                      emoji: '👈',
+                      title: 'Pick a saved stall',
+                      message: 'Choose one from the list to see its details.',
+                    )
+                  : Container(
+                      key: ValueKey(selectedId),
+                      color: AppColors.background,
+                      child: VendorDetailView(
+                        vendorId: selectedId,
+                        showBackButton: false,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ],
       ),

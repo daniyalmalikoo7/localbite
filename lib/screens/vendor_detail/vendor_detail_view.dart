@@ -8,6 +8,7 @@ import '../../domain/vendor.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/breakpoints.dart';
+import '../../theme/motion.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/filter_chip_button.dart';
 import '../../widgets/primary_cta.dart';
@@ -155,14 +156,26 @@ class _VendorDetailViewState extends State<VendorDetailView> {
                 ),
               );
             }
+            // Crossfade only — no stagger. These are reviews the user is
+            // reading, and per-item delay would hold up the content.
             return SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              sliver: SliverList.separated(
-                itemCount: visible.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.md),
-                itemBuilder: (context, index) =>
-                    ReviewCard(review: visible[index]),
+              sliver: SliverToBoxAdapter(
+                child: AnimatedSwitcher(
+                  duration: context.motion(const Duration(milliseconds: 160)),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeIn,
+                  child: Column(
+                    key: ValueKey(_mealFilter),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < visible.length; i++) ...[
+                        if (i > 0) const SizedBox(height: AppSpacing.md),
+                        ReviewCard(review: visible[i]),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             );
           },
@@ -242,11 +255,21 @@ class _DetailHero extends StatelessWidget {
                   );
                 },
                 tooltip: isSaved ? 'Remove from saved' : 'Save this stall',
-                icon: Icon(
-                  isSaved
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  color: isSaved ? AppColors.primary : Colors.white,
+                icon: TweenAnimationBuilder<double>(
+                  // Re-keyed on toggle so the tween replays from 0.7 each
+                  // time, giving a short confirming pop.
+                  key: ValueKey(isSaved),
+                  tween: Tween<double>(begin: 0.7, end: 1),
+                  duration: context.motion(const Duration(milliseconds: 200)),
+                  curve: Curves.easeOutBack,
+                  builder: (context, value, child) =>
+                      Transform.scale(scale: value, child: child),
+                  child: Icon(
+                    isSaved
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: isSaved ? AppColors.primary : Colors.white,
+                  ),
                 ),
               ),
             );

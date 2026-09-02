@@ -111,7 +111,6 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
                 for (final category in FoodCategory.values)
                   FilterChipButton(
                     label: category.label,
-                    leadingEmoji: category.emoji,
                     selected: _draft.categories.contains(category),
                     onPressed: () {
                       final next = {..._draft.categories};

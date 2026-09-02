@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/motion.dart';
+
 import '../theme/app_text_styles.dart';
 import '../theme/app_theme.dart';
 
@@ -14,19 +16,16 @@ class FilterChipButton extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onPressed,
-    this.leadingEmoji,
     this.trailingIcon,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onPressed;
-  final String? leadingEmoji;
   final IconData? trailingIcon;
 
   @override
   Widget build(BuildContext context) {
-    final emoji = leadingEmoji;
     final icon = trailingIcon;
 
     return Semantics(
@@ -51,7 +50,7 @@ class FilterChipButton extends StatelessWidget {
               onTap: onPressed,
               borderRadius: BorderRadius.circular(AppRadius.chip),
               child: AnimatedContainer(
-                duration: AppDuration.fast,
+                duration: context.motionFast,
                 constraints: const BoxConstraints(
                   minHeight: AppSizes.chipMinHeight,
                 ),
@@ -70,10 +69,6 @@ class FilterChipButton extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (emoji != null) ...[
-                      Text(emoji, style: const TextStyle(fontSize: 13)),
-                      const SizedBox(width: AppSpacing.xs + 2),
-                    ],
                     Text(
                       label,
                       style: AppTextStyles.chipLabel.copyWith(

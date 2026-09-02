@@ -5,6 +5,7 @@ import '../domain/time_format.dart';
 import '../domain/vendor.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_theme.dart';
+import '../theme/motion.dart';
 import 'meal_period_tag.dart';
 import 'rating_stars.dart';
 import 'status_badge.dart';
@@ -14,7 +15,7 @@ import 'status_badge.dart';
 /// The trailing chevron is the affordance added after user testing: two of the
 /// five participants hesitated over whether the card was tappable, so a
 /// right-facing arrow now signals it explicitly.
-class VendorCard extends StatelessWidget {
+class VendorCard extends StatefulWidget {
   const VendorCard({
     super.key,
     required this.vendor,
@@ -33,7 +34,17 @@ class VendorCard extends StatelessWidget {
   final bool selected;
 
   @override
+  State<VendorCard> createState() => _VendorCardState();
+}
+
+class _VendorCardState extends State<VendorCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final vendor = widget.vendor;
+    final selected = widget.selected;
+    final trailing = widget.trailing;
     final catalog = AppScope.catalogOf(context);
     final reviews = AppScope.reviewsOf(context);
     final distance = formatDistance(vendor.distanceFrom(catalog.origin));
@@ -42,101 +53,110 @@ class VendorCard extends StatelessWidget {
     // read well and keep the live trading status reachable.
     return Semantics(
       button: true,
-      child: Material(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: InkWell(
-          onTap: onTap,
+      child: AnimatedScale(
+        // Transform-only, so surrounding content never shifts.
+        scale: _pressed ? 0.98 : 1,
+        duration: context.motion(const Duration(milliseconds: 160)),
+        curve: Curves.easeOut,
+        child: Material(
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.card),
-          child: Ink(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(
-                color: selected ? AppColors.primary : AppColors.hairline,
-                width: selected ? 2 : 1,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: AppColors.cardShadow,
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+          child: InkWell(
+            onTap: widget.onTap,
+            onHighlightChanged: (value) => setState(() => _pressed = value),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            child: Ink(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(
+                  color: selected ? AppColors.primary : AppColors.hairline,
+                  width: selected ? 2 : 1,
                 ),
-              ],
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minHeight: AppSizes.vendorCardMinHeight,
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppColors.cardShadow,
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.sm + 2),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _Thumbnail(emoji: vendor.emoji),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            vendor.name,
-                            style: AppTextStyles.vendorName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            vendor.cuisineLabel,
-                            style: AppTextStyles.secondary,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: AppSpacing.sm - 2),
-                          StatusBadge(
-                            hours: vendor.hours,
-                            showChangeLabel: true,
-                          ),
-                          const SizedBox(height: AppSpacing.sm - 2),
-                          _RatingLine(vendor: vendor, distance: distance),
-                          ListenableBuilder(
-                            listenable: reviews,
-                            builder: (context, _) {
-                              final periods =
-                                  reviews.periodsWithReviews(vendor.id).toList()
-                                    ..sort(
-                                      (a, b) => a.index.compareTo(b.index),
-                                    );
-                              if (periods.isEmpty) {
-                                return const SizedBox.shrink();
-                              }
-                              return Padding(
-                                padding: const EdgeInsets.only(
-                                  top: AppSpacing.sm - 2,
-                                ),
-                                child: Wrap(
-                                  spacing: AppSpacing.xs + 2,
-                                  runSpacing: AppSpacing.xs,
-                                  children: [
-                                    for (final period in periods)
-                                      MealPeriodTag(period: period),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    trailing ??
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
-                          color: AppColors.inkSecondary,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: AppSizes.vendorCardMinHeight,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm + 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Thumbnail(emoji: vendor.emoji),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              vendor.name,
+                              style: AppTextStyles.vendorName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: AppSpacing.xxs),
+                            Text(
+                              vendor.cuisineLabel,
+                              style: AppTextStyles.secondary,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: AppSpacing.sm - 2),
+                            StatusBadge(
+                              hours: vendor.hours,
+                              showChangeLabel: true,
+                            ),
+                            const SizedBox(height: AppSpacing.sm - 2),
+                            _RatingLine(vendor: vendor, distance: distance),
+                            ListenableBuilder(
+                              listenable: reviews,
+                              builder: (context, _) {
+                                final periods =
+                                    reviews
+                                        .periodsWithReviews(vendor.id)
+                                        .toList()
+                                      ..sort(
+                                        (a, b) => a.index.compareTo(b.index),
+                                      );
+                                if (periods.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: AppSpacing.sm - 2,
+                                  ),
+                                  child: Wrap(
+                                    spacing: AppSpacing.xs + 2,
+                                    runSpacing: AppSpacing.xs,
+                                    children: [
+                                      for (final period in periods)
+                                        MealPeriodTag(period: period),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                  ],
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      trailing ??
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: AppIconSize.md,
+                            color: AppColors.inkSecondary,
+                          ),
+                    ],
+                  ),
                 ),
               ),
             ),

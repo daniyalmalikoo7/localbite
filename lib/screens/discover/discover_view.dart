@@ -228,7 +228,6 @@ class _CategoryChipRow extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             FilterChipButton(
               label: category.label,
-              leadingEmoji: category.emoji,
               selected: active == category,
               onPressed: () => onSelect(active == category ? null : category),
             ),
