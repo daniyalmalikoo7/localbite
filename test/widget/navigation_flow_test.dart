@@ -46,7 +46,7 @@ void main() {
     ) async {
       await pumpApp(tester);
 
-      await tester.tap(find.byType(TextField));
+      await tester.tap(find.text('Search for food or vendor...'));
       await tester.pumpAndSettle();
 
       expect(find.text('Search & Filter'), findsOneWidget);

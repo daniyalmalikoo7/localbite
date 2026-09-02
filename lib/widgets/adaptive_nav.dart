@@ -131,6 +131,9 @@ class _NavItem extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
+      // See FilterChipButton: excludeSemantics would otherwise drop the tap
+      // action and make the tab unreachable to assistive technology.
+      onTap: onTap,
       label: tab.label,
       excludeSemantics: true,
       child: InkWell(

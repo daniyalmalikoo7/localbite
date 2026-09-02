@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../../app/app_scope.dart';
 import '../../domain/meal_period.dart';
@@ -96,9 +97,12 @@ class _VendorDetailViewState extends State<VendorDetailView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Reviews (${reviews.countFor(vendor.id)})',
-                      style: AppTextStyles.sectionHeader,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        'Reviews (${reviews.countFor(vendor.id)})',
+                        style: AppTextStyles.sectionHeader,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     // Sits directly above the first review card, the position
@@ -208,6 +212,12 @@ class _DetailHero extends StatelessWidget {
       backgroundColor: AppColors.accent,
       foregroundColor: Colors.white,
       automaticallyImplyLeading: false,
+      // Names the route, fills the empty header node, and gives the collapsed
+      // bar something to show instead of a blank green strip.
+      title: Text(
+        vendor.name,
+        style: AppTextStyles.sectionHeader.copyWith(color: Colors.white),
+      ),
       leading: showBackButton
           ? IconButton(
               onPressed: () => Navigator.of(context).maybePop(),
@@ -220,14 +230,24 @@ class _DetailHero extends StatelessWidget {
           listenable: saved,
           builder: (context, _) {
             final isSaved = saved.isSaved(vendor.id);
-            return IconButton(
-              onPressed: () => saved.toggle(vendor.id),
-              tooltip: isSaved ? 'Remove from saved' : 'Save this stall',
-              icon: Icon(
-                isSaved
-                    ? Icons.favorite_rounded
-                    : Icons.favorite_border_rounded,
-                color: isSaved ? AppColors.primary : Colors.white,
+            return Semantics(
+              toggled: isSaved,
+              child: IconButton(
+                onPressed: () {
+                  saved.toggle(vendor.id);
+                  SemanticsService.sendAnnouncement(
+                    View.of(context),
+                    saved.isSaved(vendor.id) ? 'Saved' : 'Removed from saved',
+                    Directionality.of(context),
+                  );
+                },
+                tooltip: isSaved ? 'Remove from saved' : 'Save this stall',
+                icon: Icon(
+                  isSaved
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: isSaved ? AppColors.primary : Colors.white,
+                ),
               ),
             );
           },

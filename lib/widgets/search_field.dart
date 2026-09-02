@@ -29,10 +29,55 @@ class SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The read-only variant on Discover is a shortcut into the filter screen,
+    // not an editable field. Announcing it as a text box gave it two
+    // contradictory roles and no activation action.
+    if (readOnly) {
+      return Semantics(
+        button: true,
+        onTap: onTap,
+        label: 'Search and filter stalls',
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: AppSizes.minTapTarget),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.chip),
+              border: Border.all(color: AppColors.hairline),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.search_rounded,
+                  size: 20,
+                  color: AppColors.inkSecondary,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    hintText,
+                    style: AppTextStyles.secondary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (activeFilterCount > 0)
+                  _FilterCountBubble(count: activeFilterCount),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Semantics(
-      textField: !readOnly,
-      button: readOnly,
-      label: readOnly ? 'Search and filter stalls' : null,
       child: TextField(
         controller: controller,
         onChanged: onChanged,
@@ -42,6 +87,8 @@ class SearchField extends StatelessWidget {
         style: AppTextStyles.body,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
+          // A hint stops being the accessible name once the user types.
+          labelText: 'Search food or vendors',
           hintText: hintText,
           hintStyle: AppTextStyles.secondary,
           filled: true,

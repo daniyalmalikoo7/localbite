@@ -70,11 +70,12 @@ class _LocalBiteAppState extends State<LocalBiteApp> {
         onGenerateRoute: AppRouter.onGenerateRoute,
         builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
           value: AppTheme.overlayDarkIcons,
-          // Honours the system text size while bounding it, so a 3x setting
-          // cannot break the layout outright.
+          // Honours the system text size up to 200%, which is what WCAG
+          // 1.4.4 requires; beyond that the layout is bounded rather than
+          // allowed to break outright.
           child: MediaQuery.withClampedTextScaling(
             minScaleFactor: 0.9,
-            maxScaleFactor: 1.6,
+            maxScaleFactor: 2.0,
             child: child ?? const SizedBox.shrink(),
           ),
         ),

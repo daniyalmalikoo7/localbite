@@ -69,9 +69,12 @@ class DiscoverView extends StatelessWidget {
                       activeFilterCount: query.activeFilterCount,
                     ),
                     const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      'What are you craving?',
-                      style: AppTextStyles.sectionHeader,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        'What are you craving?',
+                        style: AppTextStyles.sectionHeader,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                   ],
@@ -165,7 +168,15 @@ class _DiscoverHeader extends StatelessWidget {
                     color: AppColors.inkSecondary,
                   ),
                   SizedBox(width: AppSpacing.xxs),
-                  Text('Sydney CBD', style: AppTextStyles.secondary),
+                  // Flexible: the icon is a fixed 14dp but the label scales.
+                  Flexible(
+                    child: Text(
+                      'Sydney CBD',
+                      style: AppTextStyles.secondary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -181,7 +192,9 @@ class _DiscoverHeader extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(color: AppColors.hairline),
           ),
-          child: Text('Hi 👋', style: AppTextStyles.chipLabel),
+          child: ExcludeSemantics(
+            child: Text('Hi 👋', style: AppTextStyles.chipLabel),
+          ),
         ),
       ],
     );

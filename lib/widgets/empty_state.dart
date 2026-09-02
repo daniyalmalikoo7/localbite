@@ -23,18 +23,25 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final action = actionLabel;
-    return Center(
+    // Scrollable: on the Map and Profile tabs this sits inside an Expanded,
+    // which cannot scroll, so at large text scales the body was unreachable.
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 40)),
+            ExcludeSemantics(
+              child: Text(emoji, style: const TextStyle(fontSize: 40)),
+            ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              title,
-              style: AppTextStyles.sectionHeader,
-              textAlign: TextAlign.center,
+            Semantics(
+              header: true,
+              child: Text(
+                title,
+                style: AppTextStyles.sectionHeader,
+                textAlign: TextAlign.center,
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(

@@ -51,7 +51,7 @@ flutter run -d <device-id>
 flutter analyze && flutter test
 ```
 
-64 tests pass and the analyzer reports no issues.
+70 tests pass and the analyzer reports no issues.
 
 ## How it is put together
 
@@ -87,4 +87,6 @@ The palette was measured against WCAG 2.1 AA before the build, not after. Body t
 app background and secondary text 4.99:1. Brand orange `#E85D04` measures 3.50:1 on white, so it is
 used only for large text and non-text UI; a darker `#BF4A02` (5.01:1) carries anything smaller.
 Trading status always spells the word "OPEN" or "CLOSED" so it is never conveyed by colour alone, and
-system text scaling is honoured up to 1.6x.
+system text scaling is honoured to 200%. Filter chips and navigation tabs expose real activation
+actions to assistive technology, and tap-target, labelling and contrast guidelines are asserted in
+the test suite rather than assumed.

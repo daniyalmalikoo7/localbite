@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../../app/app_scope.dart';
 import '../../domain/meal_period.dart';
@@ -69,6 +70,11 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
         mealPeriod: period,
       ),
     );
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      'Review posted',
+      Directionality.of(context),
+    );
     Navigator.of(context).pop();
   }
 
@@ -108,26 +114,42 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
             const SizedBox(height: AppSpacing.lg),
             Text('Your rating', style: AppTextStyles.sectionHeader),
             const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                for (var star = 1; star <= 5; star++)
-                  IconButton(
-                    onPressed: () => setState(() => _rating = star),
-                    iconSize: 30,
-                    padding: const EdgeInsets.only(right: AppSpacing.xs),
-                    constraints: const BoxConstraints(
-                      minWidth: AppSizes.minTapTarget,
-                      minHeight: AppSizes.minTapTarget,
+            Semantics(
+              container: true,
+              label: 'Your rating',
+              value: '$_rating out of 5 stars',
+              child: Row(
+                children: [
+                  for (var star = 1; star <= 5; star++)
+                    Semantics(
+                      checked: star <= _rating,
+                      inMutuallyExclusiveGroup: true,
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() => _rating = star);
+                          SemanticsService.sendAnnouncement(
+                            View.of(context),
+                            '$star of 5 stars',
+                            Directionality.of(context),
+                          );
+                        },
+                        iconSize: 30,
+                        padding: const EdgeInsets.only(right: AppSpacing.xs),
+                        constraints: const BoxConstraints(
+                          minWidth: AppSizes.minTapTarget,
+                          minHeight: AppSizes.minTapTarget,
+                        ),
+                        tooltip: 'Rate $star star${star == 1 ? '' : 's'}',
+                        icon: Icon(
+                          star <= _rating
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
-                    tooltip: '$star star${star == 1 ? '' : 's'}',
-                    icon: Icon(
-                      star <= _rating
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      color: AppColors.primary,
-                    ),
-                  ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text('When did you eat?', style: AppTextStyles.sectionHeader),
@@ -152,6 +174,8 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
               maxLength: 240,
               style: AppTextStyles.body,
               decoration: InputDecoration(
+                labelText: 'Your review',
+                helperText: 'At least 3 characters',
                 hintText: 'What was it like?',
                 hintStyle: AppTextStyles.secondary,
                 filled: true,

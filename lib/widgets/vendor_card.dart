@@ -38,9 +38,10 @@ class VendorCard extends StatelessWidget {
     final reviews = AppScope.reviewsOf(context);
     final distance = formatDistance(vendor.distanceFrom(catalog.origin));
 
+    // No explicit label and no excludeSemantics: the merged children already
+    // read well and keep the live trading status reachable.
     return Semantics(
       button: true,
-      label: '${vendor.name}, ${vendor.cuisineLabel}, $distance away',
       child: Material(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
