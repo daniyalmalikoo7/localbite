@@ -76,13 +76,12 @@ class VendorQuery {
         return false;
       }
       if (openNowOnly && !vendor.statusAt(now).isOpen) return false;
-      if (maxDistanceMetres != null &&
-          vendor.distanceFrom(origin) > maxDistanceMetres!) {
+      final maxDistance = maxDistanceMetres;
+      if (maxDistance != null && vendor.distanceFrom(origin) > maxDistance) {
         return false;
       }
-      if (mealPeriod != null && !vendor.hours.servesDuring(mealPeriod!)) {
-        return false;
-      }
+      final period = mealPeriod;
+      if (period != null && !vendor.hours.servesDuring(period)) return false;
       if (term.isNotEmpty && !_matchesTerm(vendor, term)) return false;
       return true;
     }).toList();

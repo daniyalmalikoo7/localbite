@@ -46,7 +46,9 @@ class ClockController extends ChangeNotifier {
 
   void _tick() {
     final next = _readClock();
-    if (next.hour == _current.hour && next.minute == _current.minute) return;
+    // Compare the whole instant, not just hour/minute: a delay of exactly one
+    // day would otherwise match and be silently dropped, freezing the date.
+    if (next.difference(_current).inMinutes == 0) return;
     _current = next;
     notifyListeners();
   }

@@ -50,6 +50,13 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
 
   void _update(VendorQuery next) => setState(() => _draft = next);
 
+  /// Clears the field as well as the draft. Resetting only the query would
+  /// leave the search box showing text that is no longer being applied.
+  void _reset() {
+    _searchController.clear();
+    _update(VendorQuery.empty);
+  }
+
   @override
   Widget build(BuildContext context) {
     final catalog = AppScope.catalogOf(context);
@@ -71,9 +78,7 @@ class _SearchFilterScreenState extends State<SearchFilterScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: _draft.isDefault
-                ? null
-                : () => _update(VendorQuery.empty),
+            onPressed: _draft.isDefault ? null : _reset,
             style: TextButton.styleFrom(
               foregroundColor: AppColors.primaryStrong,
             ),
