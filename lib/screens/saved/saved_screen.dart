@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../app/app_router.dart';
 import '../../app/app_scope.dart';
+import '../../state/load_state.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/breakpoints.dart';
 import '../../theme/motion.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/error_retry.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/vendor_card.dart';
 import '../../widgets/wordmark.dart';
 import '../vendor_detail/vendor_detail_view.dart';
@@ -86,7 +89,8 @@ class _SavedList extends StatelessWidget {
     final catalog = AppScope.catalogOf(context);
 
     return ListenableBuilder(
-      listenable: saved,
+      // Both matter: the saved set, and whether the catalogue behind it loaded.
+      listenable: Listenable.merge([saved, catalog]),
       builder: (context, _) {
         final vendors = catalog.vendorsByIds(saved.savedIds);
 
@@ -108,18 +112,35 @@ class _SavedList extends StatelessWidget {
                     const SizedBox(height: AppSpacing.lg),
                     Text('Saved Vendors', style: AppTextStyles.screenTitle),
                     const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      vendors.isEmpty
-                          ? 'No saved spots yet'
-                          : '${vendors.length} saved '
-                                '${vendors.length == 1 ? 'spot' : 'spots'}',
-                      style: AppTextStyles.secondary,
-                    ),
+                    Text(switch (catalog.state) {
+                      Loading() => 'Loading your saved spots',
+                      LoadFailed() => 'Saved spots unavailable',
+                      Loaded() =>
+                        vendors.isEmpty
+                            ? 'No saved spots yet'
+                            : '${vendors.length} saved '
+                                  '${vendors.length == 1 ? 'spot' : 'spots'}',
+                    }, style: AppTextStyles.secondary),
                   ],
                 ),
               ),
             ),
-            if (vendors.isEmpty)
+            if (catalog.state case Loading())
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
+                sliver: SliverToBoxAdapter(child: VendorListSkeleton(count: 2)),
+              )
+            else if (catalog.state case LoadFailed(:final message))
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: ErrorRetry(message: message, onRetry: catalog.retry),
+              )
+            else if (vendors.isEmpty)
               const SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(

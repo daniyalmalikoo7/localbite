@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -44,6 +46,9 @@ class _LocalBiteAppState extends State<LocalBiteApp> {
       initial: const {'ahmeds-shawarma', 'street-ramen-co'},
     );
     _reviews = ReviewsController(repository: _repository);
+    // Kick off the initial fetch; the screens render Loading until it lands.
+    unawaited(_catalog.load());
+    unawaited(_reviews.load());
   }
 
   @override

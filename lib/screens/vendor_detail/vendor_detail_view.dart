@@ -5,16 +5,19 @@ import '../../app/app_scope.dart';
 import '../../domain/meal_period.dart';
 import '../../domain/time_format.dart';
 import '../../domain/vendor.dart';
+import '../../state/load_state.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/breakpoints.dart';
 import '../../theme/motion.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/error_retry.dart';
 import '../../widgets/filter_chip_button.dart';
 import '../../widgets/primary_cta.dart';
 import '../../widgets/queue_meter.dart';
 import '../../widgets/rating_stars.dart';
 import '../../widgets/review_card.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/status_badge.dart';
 import 'write_review_sheet.dart';
 
@@ -49,157 +52,203 @@ class _VendorDetailViewState extends State<VendorDetailView> {
   @override
   Widget build(BuildContext context) {
     final catalog = AppScope.catalogOf(context);
-    final vendor = catalog.vendorById(widget.vendorId);
 
-    if (vendor == null) {
-      return const EmptyState(
-        emoji: '🤷',
-        title: 'Vendor unavailable',
-        message: 'This stall is no longer listed.',
-      );
-    }
+    return ListenableBuilder(
+      listenable: catalog,
+      builder: (context, _) {
+        final vendor = catalog.vendorById(widget.vendorId);
 
-    final reviews = AppScope.reviewsOf(context);
-    final heroHeight = context.isShortViewport ? 132.0 : 190.0;
-
-    return CustomScrollView(
-      key: PageStorageKey('detail-${widget.vendorId}'),
-      slivers: [
-        _DetailHero(
-          vendor: vendor,
-          height: heroHeight,
-          showBackButton: widget.showBackButton,
-        ),
-        SliverToBoxAdapter(child: _InfoCard(vendor: vendor)),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
-              AppSpacing.lg,
+        // A missing vendor means three different things depending on the load
+        // condition, and "unavailable" is only correct for one of them.
+        if (vendor == null) {
+          return switch (catalog.state) {
+            Loading() => const VendorDetailSkeleton(),
+            LoadFailed(:final message) => ErrorRetry(
+              message: message,
+              onRetry: catalog.retry,
             ),
-            child: QueueMeter(vendor: vendor),
-          ),
-        ),
-        const SliverToBoxAdapter(child: Divider()),
-        SliverToBoxAdapter(
-          child: ListenableBuilder(
-            listenable: reviews,
-            builder: (context, _) {
-              final available = reviews.periodsWithReviews(vendor.id);
-              return Padding(
+            Loaded() => const EmptyState(
+              emoji: '🤷',
+              title: 'Vendor unavailable',
+              message: 'This stall is no longer listed.',
+            ),
+          };
+        }
+
+        final reviews = AppScope.reviewsOf(context);
+        final heroHeight = context.isShortViewport ? 132.0 : 190.0;
+
+        return CustomScrollView(
+          key: PageStorageKey('detail-${widget.vendorId}'),
+          slivers: [
+            _DetailHero(
+              vendor: vendor,
+              height: heroHeight,
+              showBackButton: widget.showBackButton,
+            ),
+            SliverToBoxAdapter(child: _InfoCard(vendor: vendor)),
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.lg,
                   AppSpacing.lg,
                   AppSpacing.lg,
-                  AppSpacing.md,
+                  AppSpacing.lg,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        'Reviews (${reviews.countFor(vendor.id)})',
-                        style: AppTextStyles.sectionHeader,
+                child: QueueMeter(vendor: vendor),
+              ),
+            ),
+            const SliverToBoxAdapter(child: Divider()),
+            SliverToBoxAdapter(
+              child: ListenableBuilder(
+                listenable: reviews,
+                builder: (context, _) {
+                  final available = reviews.periodsWithReviews(vendor.id);
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            'Reviews (${reviews.countFor(vendor.id)})',
+                            style: AppTextStyles.sectionHeader,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        // Sits directly above the first review card, the position
+                        // adopted after testing showed participants read past a
+                        // filter placed under the section heading.
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            FilterChipButton(
+                              label: 'All',
+                              selected: _mealFilter == null,
+                              onPressed: () =>
+                                  setState(() => _mealFilter = null),
+                            ),
+                            for (final period in MealPeriod.values)
+                              if (available.contains(period))
+                                FilterChipButton(
+                                  label: period.label,
+                                  selected: _mealFilter == period,
+                                  onPressed: () => setState(
+                                    () => _mealFilter = _mealFilter == period
+                                        ? null
+                                        : period,
+                                  ),
+                                ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            ListenableBuilder(
+              listenable: reviews,
+              builder: (context, _) {
+                if (reviews.state case Loading()) {
+                  return const SliverPadding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    sliver: SliverToBoxAdapter(
+                      child: SkeletonPulse(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SkeletonBox(height: 78, radius: AppRadius.card),
+                            SizedBox(height: AppSpacing.md),
+                            SkeletonBox(height: 78, radius: AppRadius.card),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    // Sits directly above the first review card, the position
-                    // adopted after testing showed participants read past a
-                    // filter placed under the section heading.
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
-                      children: [
-                        FilterChipButton(
-                          label: 'All',
-                          selected: _mealFilter == null,
-                          onPressed: () => setState(() => _mealFilter = null),
-                        ),
-                        for (final period in MealPeriod.values)
-                          if (available.contains(period))
-                            FilterChipButton(
-                              label: period.label,
-                              selected: _mealFilter == period,
-                              onPressed: () => setState(
-                                () => _mealFilter = _mealFilter == period
-                                    ? null
-                                    : period,
-                              ),
-                            ),
-                      ],
+                  );
+                }
+                if (reviews.state case LoadFailed(:final message)) {
+                  return SliverToBoxAdapter(
+                    child: ErrorRetry(
+                      title: "Couldn't load reviews",
+                      message: message,
+                      onRetry: reviews.retry,
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        ListenableBuilder(
-          listenable: reviews,
-          builder: (context, _) {
-            final visible = reviews.forVendor(
-              vendor.id,
-              mealPeriod: _mealFilter,
-            );
-            if (visible.isEmpty) {
-              return const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                  child: EmptyState(
-                    emoji: '💬',
-                    title: 'No reviews for that meal yet',
-                    message: 'Be the first to leave one.',
+                  );
+                }
+                final visible = reviews.forVendor(
+                  vendor.id,
+                  mealPeriod: _mealFilter,
+                );
+                if (visible.isEmpty) {
+                  return const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      child: EmptyState(
+                        emoji: '💬',
+                        title: 'No reviews for that meal yet',
+                        message: 'Be the first to leave one.',
+                      ),
+                    ),
+                  );
+                }
+                // Crossfade only — no stagger. These are reviews the user is
+                // reading, and per-item delay would hold up the content.
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
                   ),
+                  sliver: SliverToBoxAdapter(
+                    child: AnimatedSwitcher(
+                      duration: context.motion(
+                        const Duration(milliseconds: 160),
+                      ),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: Column(
+                        key: ValueKey(_mealFilter),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 0; i < visible.length; i++) ...[
+                            if (i > 0) const SizedBox(height: AppSpacing.md),
+                            ReviewCard(review: visible[i]),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
                 ),
-              );
-            }
-            // Crossfade only — no stagger. These are reviews the user is
-            // reading, and per-item delay would hold up the content.
-            return SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              sliver: SliverToBoxAdapter(
-                child: AnimatedSwitcher(
-                  duration: context.motion(const Duration(milliseconds: 160)),
-                  switchInCurve: Curves.easeOut,
-                  switchOutCurve: Curves.easeIn,
-                  child: Column(
-                    key: ValueKey(_mealFilter),
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var i = 0; i < visible.length; i++) ...[
-                        if (i > 0) const SizedBox(height: AppSpacing.md),
-                        ReviewCard(review: visible[i]),
-                      ],
-                    ],
+                child: PrimaryCta(
+                  label: 'Write a Review',
+                  icon: Icons.add_rounded,
+                  onPressed: () => showWriteReviewSheet(
+                    context,
+                    vendorId: vendor.id,
+                    vendorName: vendor.name,
                   ),
                 ),
               ),
-            );
-          },
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.xl,
-              AppSpacing.lg,
-              AppSpacing.xl,
             ),
-            child: PrimaryCta(
-              label: 'Write a Review',
-              icon: Icons.add_rounded,
-              onPressed: () => showWriteReviewSheet(
-                context,
-                vendorId: vendor.id,
-                vendorName: vendor.name,
-              ),
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

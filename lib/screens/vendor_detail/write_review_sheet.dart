@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
+import 'dart:async';
+
 import '../../app/app_scope.dart';
+import '../../data/repository_exception.dart';
 import '../../domain/meal_period.dart';
 import '../../domain/review.dart';
 import '../../theme/app_text_styles.dart';
@@ -46,6 +49,8 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
   final _controller = TextEditingController();
   int _rating = 5;
   MealPeriod? _period;
+  bool _submitting = false;
+  String? _submitError;
 
   @override
   void dispose() {
@@ -53,36 +58,53 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final reviews = AppScope.reviewsOf(context);
     final now = AppScope.clockOf(context).now;
     final period = _period ?? MealPeriod.at(now) ?? MealPeriod.dinner;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final direction = Directionality.of(context);
+    final view = View.of(context);
 
-    reviews.addReview(
-      Review(
-        id: 'local-${now.microsecondsSinceEpoch}',
-        vendorId: widget.vendorId,
-        authorName: 'You',
-        authorEmoji: '🙂',
-        rating: _rating,
-        body: _controller.text.trim(),
-        postedAt: now,
-        mealPeriod: period,
-      ),
-    );
-    SemanticsService.sendAnnouncement(
-      View.of(context),
-      'Review posted',
-      Directionality.of(context),
-    );
-    Navigator.of(context).pop();
+    setState(() {
+      _submitting = true;
+      _submitError = null;
+    });
+
+    try {
+      await reviews.submit(
+        Review(
+          id: 'local-${now.microsecondsSinceEpoch}',
+          vendorId: widget.vendorId,
+          authorName: 'You',
+          authorEmoji: '🙂',
+          rating: _rating,
+          body: _controller.text.trim(),
+          postedAt: now,
+          mealPeriod: period,
+        ),
+      );
+    } on RepositoryException catch (error) {
+      // Keep the sheet open with everything the user typed still in place.
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _submitError = error.message;
+      });
+      return;
+    }
+
+    SemanticsService.sendAnnouncement(view, 'Review posted', direction);
+    navigator.pop();
+    messenger.showSnackBar(const SnackBar(content: Text('Review posted')));
   }
 
   @override
   Widget build(BuildContext context) {
     final now = AppScope.clockOf(context).now;
     final activePeriod = _period ?? MealPeriod.at(now) ?? MealPeriod.dinner;
-    final canSubmit = _controller.text.trim().length >= 3;
+    final canSubmit = _controller.text.trim().length >= 3 && !_submitting;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -198,9 +220,30 @@ class _WriteReviewSheetState extends State<_WriteReviewSheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
+            if (_submitError case final error?) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.statusClosedSurface,
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                ),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    error,
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.statusClosed,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
             PrimaryCta(
-              label: 'Post review',
-              onPressed: canSubmit ? _submit : null,
+              label: _submitting ? 'Posting' : 'Post review',
+              busy: _submitting,
+              onPressed: canSubmit ? () => unawaited(_submit()) : null,
             ),
           ],
         ),

@@ -10,11 +10,15 @@ class PrimaryCta extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.busy = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+
+  /// Shows a spinner and blocks further presses while work is in flight.
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -22,12 +26,22 @@ class PrimaryCta extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: FilledButton(
-        onPressed: onPressed,
+        onPressed: busy ? null : onPressed,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (leading != null) ...[
+            if (busy) ...[
+              const SizedBox(
+                width: AppIconSize.sm,
+                height: AppIconSize.sm,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.inkSecondary,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ] else if (leading != null) ...[
               Icon(leading, size: 18),
               const SizedBox(width: AppSpacing.sm),
             ],

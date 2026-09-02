@@ -5,10 +5,13 @@ import '../../app/app_scope.dart';
 import '../../domain/food_category.dart';
 import '../../domain/vendor.dart';
 import '../../theme/app_text_styles.dart';
+import '../../state/load_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/error_retry.dart';
 import '../../widgets/filter_chip_button.dart';
 import '../../widgets/section_header.dart';
+import '../../widgets/skeleton.dart';
 import '../../widgets/search_field.dart';
 import '../../widgets/vendor_card.dart';
 import '../../widgets/wordmark.dart';
@@ -97,16 +100,38 @@ class DiscoverView extends StatelessWidget {
                   AppSpacing.sm,
                 ),
                 child: SectionHeader(
-                  title: query.isDefault
-                      ? 'Near you'
-                      : '${vendors.length} '
-                            '${vendors.length == 1 ? 'result' : 'results'}',
+                  title: switch (catalog.state) {
+                    Loading() => 'Near you',
+                    LoadFailed() => 'Near you',
+                    Loaded() =>
+                      query.isDefault
+                          ? 'Near you'
+                          : '${vendors.length} '
+                                '${vendors.length == 1 ? 'result' : 'results'}',
+                  },
                   actionLabel: query.isDefault ? null : 'Clear',
                   onAction: query.isDefault ? null : catalog.clearFilters,
                 ),
               ),
             ),
-            if (vendors.isEmpty)
+            // The header and chips stay put across every condition, so the
+            // screen does not restructure itself as data arrives.
+            if (catalog.state case Loading())
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  0,
+                  AppSpacing.lg,
+                  AppSpacing.xl,
+                ),
+                sliver: SliverToBoxAdapter(child: VendorListSkeleton()),
+              )
+            else if (catalog.state case LoadFailed(:final message))
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: ErrorRetry(message: message, onRetry: catalog.retry),
+              )
+            else if (vendors.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(

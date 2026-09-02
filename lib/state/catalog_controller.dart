@@ -1,39 +1,67 @@
 import 'package:flutter/foundation.dart';
 
+import '../data/repository_exception.dart';
 import '../data/vendor_repository.dart';
 import '../domain/food_category.dart';
 import '../domain/geo_point.dart';
 import '../domain/vendor.dart';
 import '../domain/vendor_query.dart';
 import 'clock_controller.dart';
+import 'load_state.dart';
 
-/// Holds the vendor catalogue and the active filter selection.
+/// Holds the vendor catalogue, its load condition, and the active filters.
 ///
-/// Filtering happens here and is memoised into [visibleVendors]; it never runs
-/// inside a `build` method, so scrolling does not re-sort the list.
+/// Filtering is memoised into [visibleVendors]; it never runs inside a `build`
+/// method, so scrolling does not re-sort the list.
 class CatalogController extends ChangeNotifier {
   CatalogController({
-    required VendorRepository repository,
+    required this.repository,
     required this.clock,
     this.origin = kSydneyCbd,
-  }) : _all = List.unmodifiable(repository.loadVendors()) {
-    _visible = _compute();
+  }) {
     clock.addListener(_onTick);
   }
 
+  final VendorRepository repository;
   final ClockController clock;
   final GeoPoint origin;
-  final List<Vendor> _all;
 
+  LoadState<List<Vendor>> _state = const Loading();
   VendorQuery _query = VendorQuery.empty;
-  late List<Vendor> _visible;
+  List<Vendor> _visible = const [];
 
-  List<Vendor> get allVendors => _all;
-  List<Vendor> get visibleVendors => _visible;
+  LoadState<List<Vendor>> get state => _state;
   VendorQuery get query => _query;
 
+  /// Everything loaded, unfiltered. Empty until the first load succeeds.
+  List<Vendor> get allVendors => switch (_state) {
+    Loaded(:final value) => value,
+    _ => const [],
+  };
+
+  /// The filtered, sorted result the list renders.
+  List<Vendor> get visibleVendors => _visible;
+
+  Future<void> load() async {
+    _state = const Loading();
+    _visible = const [];
+    notifyListeners();
+    try {
+      final vendors = await repository.loadVendors();
+      _state = Loaded(vendors);
+      _visible = _compute();
+    } on RepositoryException catch (error) {
+      _state = LoadFailed(error.message);
+      _visible = const [];
+    }
+    notifyListeners();
+  }
+
+  /// Same as [load]; named for the button that calls it.
+  Future<void> retry() => load();
+
   Vendor? vendorById(String id) {
-    for (final vendor in _all) {
+    for (final vendor in allVendors) {
       if (vendor.id == id) return vendor;
     }
     return null;
@@ -75,7 +103,7 @@ class CatalogController extends ChangeNotifier {
   }
 
   List<Vendor> _compute() =>
-      _query.applyTo(_all, now: clock.now, origin: origin);
+      _query.applyTo(allVendors, now: clock.now, origin: origin);
 
   @override
   void dispose() {
