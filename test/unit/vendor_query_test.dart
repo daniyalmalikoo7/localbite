@@ -70,9 +70,7 @@ void main() {
     });
 
     test('category filter narrows to matching vendors', () {
-      final result = run(
-        const VendorQuery(categories: {FoodCategory.mexican}),
-      );
+      final result = run(const VendorQuery(categories: {FoodCategory.mexican}));
       expect(result.map((v) => v.id), ['mid']);
     });
 
@@ -189,8 +187,14 @@ void main() {
     });
 
     test('equality is by value so identical queries compare equal', () {
-      const a = VendorQuery(categories: {FoodCategory.asian}, openNowOnly: true);
-      const b = VendorQuery(categories: {FoodCategory.asian}, openNowOnly: true);
+      const a = VendorQuery(
+        categories: {FoodCategory.asian},
+        openNowOnly: true,
+      );
+      const b = VendorQuery(
+        categories: {FoodCategory.asian},
+        openNowOnly: true,
+      );
       expect(a, equals(b));
       expect(a.hashCode, equals(b.hashCode));
     });
