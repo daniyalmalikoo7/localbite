@@ -37,41 +37,114 @@ showing list and detail side by side:
 
 ![Tablet two-pane](docs/screenshots/05-tablet-two-pane.png)
 
-## Running it
+## Prerequisites
 
-Requires Flutter 3.47+ (built and tested on 3.47.1 / Dart 3.13.1).
+| Need | Version | Required for |
+|---|---|---|
+| Flutter SDK | 3.47.1 (Dart 3.13.1) | everything |
+| Xcode | 16.2+ with Command Line Tools | iOS simulator, macOS build |
+| Chrome | any recent | web |
+
+This project targets **iOS, web and macOS**. Android is not configured — there is no
+`android/` folder, because no Android SDK was available during development. Adding it
+later is one command: `flutter create --platforms=android .`
+
+Check your toolchain before anything else:
 
 ```bash
+flutter --version     # expect 3.47.1 / Dart 3.13.1
+flutter doctor        # Xcode and Chrome should be ticked
+```
+
+## Setup
+
+```bash
+git clone https://github.com/daniyalmalikoo7/localbite.git
+cd localbite
 flutter pub get
 ```
 
-**iOS Simulator** — the target used for the assessment demo:
+That is the whole install. There are no third-party runtime dependencies to resolve,
+no API keys, no `.env` file and no backend to point at — the app reads from a seeded
+in-memory repository.
+
+## Running it (development)
+
+List what you can run on, then pick one:
 
 ```bash
-xcrun simctl list devices available | grep iPhone
-xcrun simctl boot "<device-udid>" && open -a Simulator
-flutter run -d <device-udid>
+flutter devices
 ```
 
-**Web:**
+**Web** — fastest way to see it, no simulator needed:
 
 ```bash
 flutter run -d chrome
 ```
 
-**macOS desktop** — the quickest way to see the responsive breakpoints, since you can
-drag the window from phone width to tablet width and watch the layout change:
+**macOS desktop** — the quickest way to see the responsive breakpoints, because you can
+drag the window from phone width to tablet width and watch the layout switch:
 
 ```bash
 flutter run -d macos
 ```
 
+**iOS Simulator** — the target used for the assessment demo. Boot a simulator first so
+`flutter devices` can see it:
+
+```bash
+open -a Simulator                      # boots the last-used simulator
+flutter devices                        # copy the simulator's id
+flutter run -d "iPhone 16 Pro"         # name or id both work
+```
+
+If you need a specific device that is not currently booted:
+
+```bash
+xcrun simctl list devices available    # find the udid
+xcrun simctl boot <udid> && open -a Simulator
+flutter run -d <udid>
+```
+
+While it is running: `r` hot-reloads, `R` hot-restarts, `q` quits.
+
+## Building it (production)
+
+All three commands are verified working on this project.
+
+```bash
+flutter build web --release
+# -> build/web/            (~40 MB, deployable as static files)
+```
+
+```bash
+flutter build macos --release
+# -> build/macos/Build/Products/Release/localbite.app   (~43 MB)
+```
+
+```bash
+flutter build ios --release --no-codesign
+# -> build/ios/iphoneos/Runner.app   (~16 MB)
+```
+
+`--no-codesign` is needed because no Apple development team is configured on this
+project. With a signing identity set in Xcode you can drop the flag, or produce an
+archive for distribution with `flutter build ipa --release`.
+
+The live web build at <https://localbite-ict725.vercel.app> is `build/web` deployed
+as static files. To redeploy:
+
+```bash
+flutter build web --release
+vercel deploy build/web --prod
+```
+
 ## Tests
 
 ```bash
-flutter analyze
-flutter test
-flutter test integration_test/app_test.dart -d <device-udid>
+flutter analyze                                             # static analysis
+flutter test                                                # unit + widget
+flutter test integration_test/app_test.dart -d <device-id>  # end-to-end, needs a device
 ```
 
 76 unit and widget tests, plus 5 end-to-end tests that drive the real app on a simulator
@@ -88,6 +161,16 @@ The suite covers the parts that are easy to get silently wrong:
 | `test/widget/accessibility_test.dart` | Tap actions, tap targets, labelling, contrast |
 | `test/widget/responsive_layout_test.dart` | 320dp to 1024dp, landscape, 2x text scale |
 | `integration_test/app_test.dart` | The four required flows on a device |
+
+## If something goes wrong
+
+| Symptom | Cause and fix |
+|---|---|
+| `flutter` not found | The SDK is not on your PATH. `export PATH="/path/to/flutter/bin:$PATH"` |
+| No devices listed | Nothing is booted. Run `open -a Simulator`, or use `-d chrome` |
+| iOS build fails on signing | Use `flutter build ios --release --no-codesign`, or set a team in Xcode |
+| `flutter test integration_test/...` hangs | It needs a real device. Pass `-d <device-id>`; it will not run headless |
+| Android device not listed | Android is not configured. `flutter create --platforms=android .` first |
 
 ## What's implemented
 
