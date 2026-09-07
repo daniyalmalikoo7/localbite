@@ -18,6 +18,7 @@ often a different menu.
 
 **Live web build:** https://localbite-ict725.vercel.app
 **Figma prototype:** https://www.figma.com/design/efLOTWMQddlcBYbLZGENEN/LocalBite---Hi-Fi-Prototype--Tutorial-5-Exercise-3-
+**Figma wireframes:** https://www.figma.com/design/W0Gtt3GspBDUxk9xTRynor/LocalBite---Wireframes--Tutorial-5-Exercise-2-
 
 ## Screens
 
